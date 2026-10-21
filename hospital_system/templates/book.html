@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Book appointment — CareQueue{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Book an appointment</h1>
+    <p>Fill in your details and choose a doctor. You will receive a token number immediately.</p>
+  </div>
+</div>
+
+<div class="grid grid-3" style="grid-template-columns: 2fr 1fr; align-items: start;">
+  <form method="post" class="card">
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input class="input" id="name" name="name" required value="{{ form.get('name','') }}">
+        </div>
+        <div class="field">
+          <label for="phone">Phone number <span>(used to check your status)</span></label>
+          <input class="input" id="phone" name="phone" required inputmode="tel" value="{{ form.get('phone','') }}">
+        </div>
+        <div class="field">
+          <label for="age">Age</label>
+          <input class="input" type="number" id="age" name="age" min="0" max="120" value="{{ form.get('age','') }}">
+        </div>
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="">Prefer not to say</option>
+            {% for g in ['Female', 'Male', 'Other'] %}
+              <option {{ 'selected' if form.get('gender') == g }}>{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field full">
+          <label for="doctor_id">Doctor</label>
+          <select id="doctor_id" name="doctor_id" required>
+            <option value="">Select a doctor</option>
+            {% for d in doctors %}
+              <option value="{{ d.id }}" {{ 'selected' if form.get('doctor_id')|string == d.id|string }}>
+                {{ d.name }} — {{ d.department }}{% if d.room %} (Room {{ d.room }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input class="input" type="date" id="date" name="date" min="{{ today }}" value="{{ form.get('date', today) }}">
+        </div>
+        <div class="field full">
+          <label for="reason">Reason for visit <span>(optional)</span></label>
+          <textarea id="reason" name="reason" rows="3" placeholder="e.g. Fever for three days">{{ form.get('reason','') }}</textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-lg">Get my token</button>
+        <a class="btn btn-ghost btn-lg" href="{{ url_for('index') }}">Cancel</a>
+      </div>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card-body">
+      <h3>How it works</h3>
+      <ol style="margin: .75rem 0 0; padding-left: 1.2rem; color: var(--text-2); display: grid; gap: .5rem;">
+        <li>Submit this form to receive a token number.</li>
+        <li>Your ticket page shows how many patients are ahead and an estimated wait.</li>
+        <li>When staff call your number, the page turns green — head to the doctor's room.</li>
+      </ol>
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.25rem 0;">
+      <p class="small muted">For emergencies, do not book — go directly to the Emergency department.</p>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}

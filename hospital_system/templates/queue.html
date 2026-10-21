@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="10">
+  <title>Now serving — {{ doctor.name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="board">
+  <header class="board-header">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span>
+      CareQueue
+    </a>
+    <div style="text-align:right">
+      <div style="font-size:1.4rem;font-weight:700">{{ doctor.name }}</div>
+      <div style="color:rgba(255,255,255,.55)">{{ doctor.department }}{% if doctor.room %} · Room {{ doctor.room }}{% endif %}</div>
+    </div>
+  </header>
+
+  <main class="board-main">
+    <section class="board-serving">
+      <div class="label">Now serving</div>
+      <div class="token">{{ q.serving.token_no if q.serving else '—' }}</div>
+      {% if q.serving %}<div class="room">Please proceed to Room {{ doctor.room or '—' }}</div>{% endif %}
+    </section>
+    <section class="board-next">
+      <h2>Up next</h2>
+      <ol>
+        {% for r in q.waiting[:6] %}
+          <li>Token {{ r.token_no }} <span>{{ loop.index }}{{ 'st' if loop.index == 1 else ('nd' if loop.index == 2 else ('rd' if loop.index == 3 else 'th')) }} in line</span></li>
+        {% else %}
+          <li style="font-size:1.2rem;font-weight:400;color:rgba(255,255,255,.45)">No patients waiting</li>
+        {% endfor %}
+      </ol>
+    </section>
+  </main>
+
+  <footer class="board-footer">
+    <span>{{ q.waiting|length }} waiting · {{ q.finished|length }} completed today</span>
+    <span>Refreshes every 10 seconds</span>
+  </footer>
+</body>
+</html>

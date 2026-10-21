@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Staff dashboard — CareQueue{% endblock %}
+{% block head %}<meta http-equiv="refresh" content="60">{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Staff dashboard</h1>
+    <p>{{ today }} · refreshes every minute</p>
+  </div>
+</div>
+
+<div class="grid grid-4">
+  <div class="card stat"><div class="stat-label">Waiting</div><div class="stat-value">{{ stats.waiting or 0 }}</div></div>
+  <div class="card stat"><div class="stat-label">Being seen</div><div class="stat-value">{{ stats.in_progress or 0 }}</div></div>
+  <div class="card stat"><div class="stat-label">Completed</div><div class="stat-value">{{ stats.done or 0 }}</div></div>
+  <div class="card stat"><div class="stat-label">Total today</div><div class="stat-value">{{ stats.total or 0 }}</div></div>
+</div>
+
+<div class="section">
+  <div class="section-header"><h2>Queues</h2></div>
+
+  {% for d in doctors %}
+  {% set q = queues[d.id] %}
+  <div class="card doctor-panel">
+    <div class="card-header">
+      <div class="doctor-title">
+        <div class="avatar">{{ d.name.replace('Dr. ', '')[:1] }}</div>
+        <div>
+          <strong>{{ d.name }}</strong>
+          {% if not d.available %}<span class="pill off" style="margin-left:.4rem">Unavailable</span>{% endif %}
+          <div class="meta">{{ d.department }} · Room {{ d.room or '—' }} · {{ q.waiting|length }} waiting</div>
+        </div>
+      </div>
+      <div class="actions">
+        <form method="post" action="{{ url_for('call_next', doctor_id=d.id) }}">
+          <button class="btn btn-success" {{ 'disabled' if not q.waiting }}>Call next patient</button>
+        </form>
+        <form method="post" action="{{ url_for('toggle_doctor', doctor_id=d.id) }}">
+          <button class="btn btn-outline btn-sm">{{ 'Mark unavailable' if d.available else 'Mark available' }}</button>
+        </form>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('queue_display', doctor_id=d.id) }}" target="_blank">Open display board</a>
+      </div>
+    </div>
+
+    {% if q.serving %}
+    <div class="serving-strip">
+      <div>
+        <span class="big">#{{ q.serving.token_no }}</span>
+        <strong>{{ q.serving.patient_name }}</strong>
+        {% if q.serving.reason %}<span class="muted"> — {{ q.serving.reason }}</span>{% endif %}
+      </div>
+      <form method="post" action="{{ url_for('set_status', appt_id=q.serving.id) }}" class="inline">
+        <button class="btn btn-primary btn-sm" name="status" value="done">Mark done</button>
+        <button class="btn btn-outline btn-sm" name="status" value="no_show">No-show</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if q.waiting %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Token</th><th>Patient</th><th>Age / Sex</th><th>Phone</th><th>Reason</th><th></th></tr></thead>
+        <tbody>
+        {% for r in q.waiting %}
+          <tr>
+            <td class="num">{{ r.token_no }}</td>
+            <td>{{ r.patient_name }}</td>
+            <td>{{ r.age or '—' }} / {{ (r.gender or '—')[:1] }}</td>
+            <td class="mono">{{ r.phone }}</td>
+            <td>{{ r.reason or '—' }}</td>
+            <td style="text-align:right">
+              <form method="post" action="{{ url_for('set_status', appt_id=r.id) }}" class="inline">
+                <button class="btn btn-outline btn-sm" name="status" value="in_progress">Call</button>
+                <button class="btn btn-ghost btn-sm" name="status" value="cancelled">Cancel</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty">No patients waiting.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section">
+  <div class="section-header"><h2>Bed management</h2></div>
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Department</th><th>Occupied</th><th>Total</th><th>Free</th><th>Update</th></tr></thead>
+      <tbody>
+      {% for dep in departments %}
+        <tr>
+          <td><strong>{{ dep.name }}</strong></td>
+          <td class="mono">{{ dep.occupied_beds }}</td>
+          <td class="mono">{{ dep.total_beds }}</td>
+          <td class="num">{{ dep.total_beds - dep.occupied_beds }}</td>
+          <td>
+            <form method="post" action="{{ url_for('update_beds', dept_id=dep.id) }}" class="inline">
+              <button class="btn btn-primary btn-sm" name="action" value="admit">Admit</button>
+              <button class="btn btn-outline btn-sm" name="action" value="discharge">Discharge</button>
+              <input class="input" type="number" name="total_beds" value="{{ dep.total_beds }}" min="0" style="width:80px;padding:.35rem .5rem">
+              <button class="btn btn-ghost btn-sm" name="action" value="set_total">Set total</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header"><h2>Add a doctor</h2></div>
+  <form method="post" action="{{ url_for('add_doctor') }}" class="card">
+    <div class="card-body">
+      <div class="form-grid" style="grid-template-columns: 2fr 1.5fr 1fr 1fr;">
+        <div class="field"><label>Name</label><input class="input" name="name" required placeholder="Dr. Jane Doe"></div>
+        <div class="field"><label>Department</label>
+          <select name="department_id">{% for dep in departments %}<option value="{{ dep.id }}">{{ dep.name }}</option>{% endfor %}</select>
+        </div>
+        <div class="field"><label>Room</label><input class="input" name="room"></div>
+        <div class="field"><label>Minutes per patient</label><input class="input" type="number" name="avg_minutes" value="10" min="1"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary">Add doctor</button></div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

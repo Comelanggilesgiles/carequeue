@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Check status — CareQueue{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Check my appointment</h1>
+    <p>Enter the phone number you used when booking.</p>
+  </div>
+</div>
+
+<form method="get" class="card">
+  <div class="card-body search-bar">
+    <input class="input" name="phone" placeholder="Phone number" value="{{ phone }}" required inputmode="tel">
+    <button class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Search
+    </button>
+  </div>
+</form>
+
+{% if phone %}
+  <div class="section">
+    {% if results %}
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Token</th><th>Doctor</th><th>Status</th><th>Estimated wait</th><th></th></tr></thead>
+        <tbody>
+        {% for r in results %}
+          <tr>
+            <td>{{ r.appt.date }}</td>
+            <td class="num">{{ r.appt.token_no }}</td>
+            <td>{{ r.appt.doctor_name }}<span class="sub">{{ r.appt.department }}</span></td>
+            <td><span class="pill {{ r.appt.status }}">{{ r.appt.status.replace('_',' ') }}</span></td>
+            <td>{% if r.estimate %}{{ r.estimate[0] }} ahead · about {{ r.estimate[1] }} min{% else %}—{% endif %}</td>
+            <td style="text-align:right"><a class="btn btn-outline btn-sm" href="{{ url_for('ticket', appt_id=r.appt.id) }}">Open ticket</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="card"><div class="empty">No upcoming appointments found for <strong>{{ phone }}</strong>.</div></div>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}

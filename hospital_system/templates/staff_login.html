@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Staff sign in — CareQueue{% endblock %}
+{% block content %}
+<div class="auth card">
+  <form method="post" class="card-body">
+    <h1>Staff sign in</h1>
+    <p class="muted small" style="margin-bottom:1.5rem">Authorised hospital staff only.</p>
+    <div class="field">
+      <label for="password">Password</label>
+      <input class="input" type="password" id="password" name="password" autofocus required>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-block">Sign in</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

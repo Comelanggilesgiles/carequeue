@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Token {{ appt.token_no }} — CareQueue{% endblock %}
+{% block head %}
+  {% if appt.status in ['waiting', 'in_progress'] %}<meta http-equiv="refresh" content="30">{% endif %}
+{% endblock %}
+{% block content %}
+
+{% set s = appt.status %}
+<div class="ticket-layout">
+  <div class="card ticket">
+    <div class="label">Your token number</div>
+    <div class="token">{{ appt.token_no }}</div>
+    <span class="pill {{ s }}">{{ s.replace('_', ' ') }}</span>
+
+    {% if s in ['waiting', 'in_progress', 'done'] %}
+    <div class="steps">
+      <div class="step done"><i></i>Booked</div>
+      <div class="step {{ 'done' if s != 'waiting' else 'current' }}"><i></i>Waiting</div>
+      <div class="step {{ 'done' if s == 'done' else ('current' if s == 'in_progress' else '') }}"><i></i>Your turn</div>
+      <div class="step {{ 'done' if s == 'done' else '' }}"><i></i>Completed</div>
+    </div>
+    {% endif %}
+
+    <dl class="ticket-meta">
+      <div><dt>Patient</dt><dd>{{ appt.patient_name }}</dd></div>
+      <div><dt>Date</dt><dd>{{ appt.date }}</dd></div>
+      <div><dt>Doctor</dt><dd>{{ doctor.name }}</dd></div>
+      <div><dt>Department</dt><dd>{{ doctor.department }}{% if doctor.room %} · Room {{ doctor.room }}{% endif %}</dd></div>
+    </dl>
+
+    {% if s == 'in_progress' %}
+      <div class="notice success">
+        <strong>It is your turn.</strong> Please proceed to Room {{ doctor.room or '—' }} now.
+      </div>
+    {% elif s == 'waiting' and estimate %}
+      <div class="notice">
+        {% if estimate[0] == 0 %}
+          <strong>You are next.</strong> Please stay close to the waiting area.
+        {% else %}
+          <strong>{{ estimate[0] }}</strong> patient{{ '' if estimate[0] == 1 else 's' }} ahead of you
+          &middot; estimated wait about <strong>{{ estimate[1] }} minutes</strong>
+        {% endif %}
+        {% if now_serving %}<div class="small muted" style="margin-top:.3rem">Now serving token {{ now_serving }}</div>{% endif %}
+      </div>
+    {% elif s == 'done' %}
+      <div class="notice success">This visit is complete. Thank you.</div>
+    {% else %}
+      <div class="notice danger">This appointment was marked as <strong>{{ s.replace('_',' ') }}</strong>. Please book again or ask the front desk.</div>
+    {% endif %}
+
+    <p class="small subtle" style="margin-top:1.25rem">
+      This page refreshes automatically. You can also find it later by searching your phone number on the
+      <a href="{{ url_for('status', phone=appt.phone) }}">status page</a>.
+    </p>
+  </div>
+</div>
+
+{% endblock %}
